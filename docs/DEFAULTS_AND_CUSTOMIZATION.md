@@ -9,6 +9,7 @@ When **gum** is not on `PATH`, Phase 2 (`install/phase-2-tui.sh` / `phase-2-tui.
 | Variable | Default when gum is missing |
 |----------|-----------------------------|
 | `BOTSTRAP_GIT_NAME` / `BOTSTRAP_GIT_EMAIL` | Empty unless already set in the environment. |
+| `BOTSTRAP_GIT_ALIASES` | All catalog entries with **`default: true`** when **`configs/git/aliases.yaml`** has **`defaults.enabled: true`**, unless **`git-aliases.env`** already has **`selected=`** (reconfigure). Set to **`none`** to skip. |
 | `BOTSTRAP_EDITOR` | `none` |
 | `BOTSTRAP_LANGUAGES` | Empty (no optional language installs from TUI). |
 | `BOTSTRAP_DATABASES` | Empty. |
@@ -22,7 +23,7 @@ You can **pre-set any `BOTSTRAP_*`** before running `install.sh`, `install.ps1`,
 
 Phase 3 copies or merges from **`configs/`** and runs optional installs from **`registry/optional.yaml`**. Typical defaults:
 
-- **Git:** `configs/git/gitconfig` is copied to **`~/.gitconfig`** only if that file **does not** already exist. Global **`user.name`** / **`user.email`** are set from **`BOTSTRAP_GIT_NAME`** / **`BOTSTRAP_GIT_EMAIL`** when non-empty.
+- **Git:** `configs/git/gitconfig` is copied to **`~/.gitconfig`** only if that file **does not** already exist. Global **`user.name`** / **`user.email`** are set from **`BOTSTRAP_GIT_NAME`** / **`BOTSTRAP_GIT_EMAIL`** when non-empty. **Git shortcuts** (`git st`, `git co`, …) from **`configs/git/aliases.yaml`** are written to **`~/.config/botstrap/git-aliases`** and included from **`~/.gitconfig`** when selected in Phase 2 (or when **`BOTSTRAP_GIT_ALIASES`** is preset).
 - **Git ignore:** `gitignore_global` is copied and **`core.excludesfile`** is pointed at it when Git is available.
 - **Starship:** `configs/shell/prompt.toml` → **`~/.config/starship.toml`** (overwrites when the repo file exists).
 - **Shell rc files:** `aliases` and `functions` are appended **once** inside `# botstrap aliases` / `# botstrap functions` blocks to **`~/.zshrc`** and **`~/.bashrc`** (Unix). The PATH snippet sources **`~/.config/botstrap/env.sh`**.
@@ -50,6 +51,7 @@ Export **`BOTSTRAP_*`** variables before the orchestrator or before sourcing Pha
 ### 4. Manual edits in your home directory
 
 - Prefer editing **`~/.config/...`** files directly for Starship, editor configs, and Git excludes when you do not want to flow changes through the repo.
+- **Git aliases:** edit **`~/.config/botstrap/git-aliases`** directly, or run **`botstrap reconfigure`** to change the Phase 2 selection. To add custom aliases outside Botstrap, set them in **`~/.gitconfig`** (not in the include file) so reconfigure does not overwrite them.
 - For **`~/.zshrc`** / **`~/.bashrc`**, avoid duplicating Botstrap blocks: either edit **outside** the `# botstrap …` sections or adjust **`configs/shell/*`** in the clone and re-run Phase 3 so a single marked block stays canonical.
 
 ### 5. Fork or extend the registry

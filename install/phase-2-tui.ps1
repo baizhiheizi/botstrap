@@ -45,6 +45,22 @@ if (-not (Get-Command gum -ErrorAction SilentlyContinue)) {
         if ($om.Count -gt 0) { $env:BOTSTRAP_OPTIONAL_APPS = ($om[0] -replace '^\s*optional_apps=', '').Trim() }
     }
     if (-not $env:BOTSTRAP_OPTIONAL_APPS) { $env:BOTSTRAP_OPTIONAL_APPS = '' }
+    . (Join-Path $env:BOTSTRAP_ROOT 'lib\git-aliases.ps1')
+    if (-not $env:BOTSTRAP_GIT_ALIASES) {
+        $gitAliasesEnv = Get-BotstrapGitAliasesEnvPath
+        if (Test-Path -LiteralPath $gitAliasesEnv) {
+            $gaMatch = @(Get-Content -LiteralPath $gitAliasesEnv -ErrorAction SilentlyContinue | Where-Object { $_ -match '^\s*selected=' } | Select-Object -First 1)
+            if ($gaMatch.Count -gt 0) {
+                $env:BOTSTRAP_GIT_ALIASES = ($gaMatch[0] -replace '^\s*selected=', '').Trim()
+            }
+            else {
+                $env:BOTSTRAP_GIT_ALIASES = Get-BotstrapGitAliasesDefaultCsv
+            }
+        }
+        else {
+            $env:BOTSTRAP_GIT_ALIASES = Get-BotstrapGitAliasesDefaultCsv
+        }
+    }
     return
 }
 
@@ -81,6 +97,72 @@ if (-not $env:BOTSTRAP_GIT_NAME) {
 if (-not $env:BOTSTRAP_GIT_EMAIL) {
     $emailArgs = if ($gitEmailDefault) { @('--value', $gitEmailDefault) } else { @() }
     $env:BOTSTRAP_GIT_EMAIL = & gum input --placeholder $gitEmailPlaceholder @emailArgs
+}
+
+. (Join-Path $env:BOTSTRAP_ROOT 'lib\git-aliases.ps1')
+if (-not $env:BOTSTRAP_GIT_ALIASES) {
+    $gitAliasLabels = @(Get-BotstrapGitAliasesChooseLabels)
+    if ($gitAliasLabels.Count -gt 0) {
+        $previewLines = @(Get-BotstrapGitAliasesPreviewLines)
+        $previewText = ($previewLines -join "`n")
+        $ErrorActionPreference = 'Continue'
+        & gum style --border normal --padding '0 1' --foreground 212 `
+            'Git shortcuts' '' `
+            'Run git st, git co, and similar aliases from configs/git/aliases.yaml.' '' `
+            $previewText
+        $ErrorActionPreference = 'Stop'
+        $installAliases = $false
+        $ErrorActionPreference = 'Continue'
+        if (& gum confirm 'Install git shortcuts? (git st, git co, …)') {
+            $installAliases = $true
+        }
+        $ErrorActionPreference = 'Stop'
+        if ($installAliases) {
+            $gitAliasEnvFile = Get-BotstrapGitAliasesEnvPath
+            $gitAliasGumArgs = @('choose', '--no-limit', '--ordered', '--header', 'Git shortcuts (git <name>)')
+            $seedCsv = ''
+            if (Test-Path -LiteralPath $gitAliasEnvFile) {
+                $gaSeed = @(Get-Content -LiteralPath $gitAliasEnvFile -ErrorAction SilentlyContinue | Where-Object { $_ -match '^\s*selected=' } | Select-Object -First 1)
+                if ($gaSeed.Count -gt 0) {
+                    $seedCsv = ($gaSeed[0] -replace '^\s*selected=', '').Trim()
+                }
+            }
+            if ($seedCsv -eq 'none') {
+                # no pre-selection
+            }
+            elseif ($seedCsv) {
+                foreach ($rawId in $seedCsv.Split(',')) {
+                    $id = $rawId.Trim()
+                    if (-not $id) { continue }
+                    foreach ($label in $gitAliasLabels) {
+                        if ($label.StartsWith("$id → ")) {
+                            $gitAliasGumArgs += @('--selected', $label)
+                        }
+                    }
+                }
+            }
+            else {
+                $gitAliasGumArgs += @('--selected', '*')
+            }
+            $gitAliasGumArgs += $gitAliasLabels
+            $ErrorActionPreference = 'Continue'
+            $aliasLines = @( & gum @gitAliasGumArgs )
+            $ErrorActionPreference = 'Stop'
+            $aliasIds = @($aliasLines | ForEach-Object { Get-BotstrapGitAliasIdFromLabel -Label "$_".Trim() } | Where-Object { $_ })
+            if ($aliasIds.Count -gt 0) {
+                $env:BOTSTRAP_GIT_ALIASES = ($aliasIds -join ',')
+            }
+            else {
+                $env:BOTSTRAP_GIT_ALIASES = 'none'
+            }
+        }
+        else {
+            $env:BOTSTRAP_GIT_ALIASES = 'none'
+        }
+    }
+    else {
+        $env:BOTSTRAP_GIT_ALIASES = 'none'
+    }
 }
 
 $ErrorActionPreference = 'Stop'

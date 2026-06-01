@@ -43,6 +43,21 @@ if ! command -v gum &>/dev/null; then
     export BOTSTRAP_OPTIONAL_APPS="$(grep -m1 '^optional_apps=' "${_opt_sel}" 2>/dev/null | sed 's/^optional_apps=//' || true)"
   fi
   export BOTSTRAP_OPTIONAL_APPS="${BOTSTRAP_OPTIONAL_APPS:-}"
+  # shellcheck source=lib/git-aliases.sh
+  source "${BOTSTRAP_ROOT}/lib/git-aliases.sh"
+  _git_aliases_env="$(botstrap_git_aliases_env_path)"
+  if [[ -z "${BOTSTRAP_GIT_ALIASES:-}" ]]; then
+    if [[ -f "${_git_aliases_env}" ]]; then
+      _ga_ln="$(grep -m1 '^selected=' "${_git_aliases_env}" 2>/dev/null || true)"
+      if [[ -n "${_ga_ln}" ]]; then
+        export BOTSTRAP_GIT_ALIASES="${_ga_ln#selected=}"
+      else
+        export BOTSTRAP_GIT_ALIASES="$(botstrap_git_aliases_default_csv)"
+      fi
+    else
+      export BOTSTRAP_GIT_ALIASES="$(botstrap_git_aliases_default_csv)"
+    fi
+  fi
   exit 0
 fi
 
@@ -72,6 +87,72 @@ if [[ -n "${GIT_AUTHOR_EMAIL:-}" ]]; then
 fi
 # shellcheck disable=SC2086 # bash32-nounset-empty-array: optional gum args
 export BOTSTRAP_GIT_EMAIL="${BOTSTRAP_GIT_EMAIL:-$(gum input --placeholder "${_git_email_placeholder}" ${_git_email_args[@]+"${_git_email_args[@]}"})}"
+
+# shellcheck source=lib/git-aliases.sh
+source "${BOTSTRAP_ROOT}/lib/git-aliases.sh"
+if [[ -z "${BOTSTRAP_GIT_ALIASES:-}" ]]; then
+  _git_alias_env_file="$(botstrap_git_aliases_env_path)"
+  _git_alias_labels=()
+  botstrap_read_lines_to_array _git_alias_labels < <(botstrap_git_aliases_choose_labels)
+  if [[ ${#_git_alias_labels[@]} -gt 0 ]]; then
+    _git_alias_preview=()
+    botstrap_read_lines_to_array _git_alias_preview < <(botstrap_git_aliases_preview_lines)
+    _git_alias_preview_text=""
+    if [[ ${#_git_alias_preview[@]} -gt 0 ]]; then
+      _git_alias_preview_text="$(printf '%s\n' "${_git_alias_preview[@]}")"
+    fi
+    gum style --border normal --padding "0 1" --foreground 212 \
+      "Git shortcuts" "" \
+      "Run git st, git co, and similar aliases from configs/git/aliases.yaml." "" \
+      "${_git_alias_preview_text}"
+
+    if gum confirm "Install git shortcuts? (git st, git co, …)"; then
+      _git_alias_gum_args=()
+      _git_alias_seed_csv=""
+      if [[ -f "${_git_alias_env_file}" ]]; then
+        _ga_seed_ln="$(grep -m1 '^selected=' "${_git_alias_env_file}" 2>/dev/null || true)"
+        [[ -n "${_ga_seed_ln}" ]] && _git_alias_seed_csv="${_ga_seed_ln#selected=}"
+      fi
+      if [[ "${_git_alias_seed_csv}" == "none" ]]; then
+        :
+      elif [[ -n "${_git_alias_seed_csv}" ]]; then
+        IFS=',' read -ra _ga_seed_ids <<<"${_git_alias_seed_csv}"
+        for _ga_id in "${_ga_seed_ids[@]}"; do
+          _ga_id="${_ga_id//[[:space:]]/}"
+          [[ -n "${_ga_id}" ]] || continue
+          for _ga_label in "${_git_alias_labels[@]}"; do
+            if [[ "${_ga_label}" == "${_ga_id} → "* ]]; then
+              _git_alias_gum_args+=(--selected "${_ga_label}")
+            fi
+          done
+        done
+      else
+        _git_alias_gum_args=(--selected '*')
+      fi
+      _git_alias_lines="$(
+        # shellcheck disable=SC2086 # bash32-nounset-empty-array: optional gum args
+        gum choose --no-limit --ordered --header "Git shortcuts (git <name>)" \
+          ${_git_alias_gum_args[@]+"${_git_alias_gum_args[@]}"} \
+          ${_git_alias_labels[@]+"${_git_alias_labels[@]}"} || true
+      )"
+      _git_alias_ids=()
+      while IFS= read -r _ga_line || [[ -n "${_ga_line}" ]]; do
+        [[ -n "${_ga_line}" ]] || continue
+        _git_alias_ids+=("$(botstrap_git_aliases_id_from_label "${_ga_line}")")
+      done < <(printf '%s\n' "${_git_alias_lines}")
+      if [[ ${#_git_alias_ids[@]} -gt 0 ]]; then
+        _git_alias_csv="$(printf '%s,' "${_git_alias_ids[@]}")"
+        export BOTSTRAP_GIT_ALIASES="${_git_alias_csv%,}"
+      else
+        export BOTSTRAP_GIT_ALIASES="none"
+      fi
+    else
+      export BOTSTRAP_GIT_ALIASES="none"
+    fi
+  else
+    export BOTSTRAP_GIT_ALIASES="none"
+  fi
+fi
 
 _core_yaml="${BOTSTRAP_ROOT}/registry/core.yaml"
 _core_tool_names=()

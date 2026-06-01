@@ -67,6 +67,10 @@ if [[ -n "${BOTSTRAP_GIT_EMAIL:-}" ]]; then
   git config --global user.email "${BOTSTRAP_GIT_EMAIL}" 2>/dev/null || true
 fi
 
+# shellcheck source=lib/git-aliases.sh
+source "${BOTSTRAP_ROOT}/lib/git-aliases.sh"
+botstrap_git_aliases_apply
+
 _append_block() {
   local file="$1"
   local marker="$2"

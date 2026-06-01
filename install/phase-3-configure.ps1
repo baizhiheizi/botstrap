@@ -87,6 +87,9 @@ if (Get-Command git -ErrorAction SilentlyContinue) {
     }
 }
 
+. (Join-Path $root 'lib\git-aliases.ps1')
+Install-BotstrapGitAliases
+
 $themeStarship = Join-Path $root "themes\$($env:BOTSTRAP_THEME)\starship.toml"
 $promptTpl = Join-Path $root 'configs\shell\prompt.toml'
 $starshipOut = Join-Path $configBase 'starship.toml'

@@ -117,6 +117,14 @@ foreach ($profilePath in (Get-BotstrapWindowsPowerShellProfilePaths)) {
     Remove-BotstrapProfileBlocks -ProfilePath $profilePath
 }
 
+. (Join-Path $Root 'lib\git-aliases.ps1')
+if ($Purge) {
+    Uninstall-BotstrapGitAliases -Purge
+}
+else {
+    Uninstall-BotstrapGitAliases
+}
+
 if ($Purge) {
     $cfg = Join-Path $env:USERPROFILE '.config\botstrap'
     if (Test-Path -LiteralPath $cfg) {
