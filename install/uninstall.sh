@@ -158,6 +158,14 @@ if [[ -f "${env_sh}" ]]; then
   botstrap_log_info "Removed ${env_sh}"
 fi
 
+# shellcheck source=lib/git-aliases.sh
+source "${ROOT}/lib/git-aliases.sh"
+if [[ "${PURGE}" == true ]]; then
+  botstrap_git_aliases_uninstall --purge
+else
+  botstrap_git_aliases_uninstall
+fi
+
 if [[ "${PURGE}" == true ]]; then
   cfg="${HOME}/.config/botstrap"
   if [[ -d "${cfg}" ]]; then

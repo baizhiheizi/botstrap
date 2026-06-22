@@ -10,8 +10,9 @@ For **defaults**, **automation env vars**, and **how to customize** (reconfigure
 |-----------------|----------------------|
 | `configs/git/gitconfig` | Copied to **`~/.gitconfig`** only when that file does **not** already exist (Unix Phase 3). |
 | `configs/git/gitignore_global` | Copied to **`~/.gitignore_global`**; `git config --global core.excludesfile` set to that path when Git is available. |
+| `configs/git/aliases.yaml` | Catalog of recommended git aliases (not copied verbatim). Phase 2 uses it for preview and multi-select; Phase 3 writes selected aliases to **`~/.config/botstrap/git-aliases`** and adds a **`[include]`** in **`~/.gitconfig`** (marker **`# botstrap git-aliases`**). |
 
-Global **`user.name`** and **`user.email`** are set from **`BOTSTRAP_GIT_NAME`** and **`BOTSTRAP_GIT_EMAIL`** when non-empty (not from static files).
+Global **`user.name`** and **`user.email`** are set from **`BOTSTRAP_GIT_NAME`** and **`BOTSTRAP_GIT_EMAIL`** when non-empty (not from static files). Git alias selection is driven by **`BOTSTRAP_GIT_ALIASES`** (see [Reference — Phase 2 selection variables](./REFERENCE.md#phase-2-selection-variables-unix)).
 
 ## `configs/shell/`
 
@@ -57,6 +58,8 @@ Phase 3 also writes:
 
 - **`~/.config/botstrap/theme.env`** — `theme=<value>`
 - **`~/.config/botstrap/editor.env`** — `editor=<value>`
+- **`~/.config/botstrap/git-aliases.env`** — `selected=` and `managed=` alias id lists
+- **`~/.config/botstrap/git-aliases`** — generated `[alias]` fragment included from **`~/.gitconfig`**
 
 ## `themes/`
 

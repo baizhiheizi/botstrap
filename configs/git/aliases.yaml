@@ -1,0 +1,90 @@
+# Git alias catalog for Botstrap Phase 2 / Phase 3.
+# Applied via ~/.config/botstrap/git-aliases (included from ~/.gitconfig).
+
+defaults:
+  enabled: true
+
+aliases:
+  - id: st
+    name: st
+    command: status -sb
+    description: Short status with branch info
+    default: true
+
+  - id: co
+    name: co
+    command: checkout
+    description: Switch branches
+    default: true
+
+  - id: br
+    name: br
+    command: branch -vv
+    description: List branches with tracking info
+    default: true
+
+  - id: ci
+    name: ci
+    command: commit
+    description: Create a commit
+    default: true
+
+  - id: ca
+    name: ca
+    command: commit --amend
+    description: Amend the last commit
+    default: true
+
+  - id: cane
+    name: cane
+    command: commit --amend --no-edit
+    description: Amend without editing the message
+    default: true
+
+  - id: unstage
+    name: unstage
+    command: restore --staged
+    description: Unstage files
+    default: true
+
+  - id: undo
+    name: undo
+    command: reset HEAD~1 --mixed
+    description: Undo last commit, keep changes
+    default: true
+
+  - id: last
+    name: last
+    command: log -1 HEAD
+    description: Show the latest commit
+    default: true
+
+  - id: lg
+    name: lg
+    command: log --oneline --graph --decorate -20
+    description: Compact recent history graph
+    default: true
+
+  - id: df
+    name: df
+    command: diff
+    description: Show unstaged diff
+    default: true
+
+  - id: dc
+    name: dc
+    command: diff --cached
+    description: Show staged diff
+    default: true
+
+  - id: pullr
+    name: pullr
+    command: pull --rebase
+    description: Pull with rebase
+    default: true
+
+  - id: pushf
+    name: pushf
+    command: push --force-with-lease
+    description: Safer force push
+    default: true
